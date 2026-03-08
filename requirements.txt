@@ -1,0 +1,7 @@
+streamlit==1.51.0
+pandas
+pycaret==3.3.2
+plotly
+python-dotenv
+openai
+scikit-learn
