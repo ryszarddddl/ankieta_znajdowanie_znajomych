@@ -9,3 +9,10 @@ wybór ilości klastrów w modelu treningowym
 wybór nazwy pliku opisów modelu treningowego  
 możliwość dodania klucza api open ai w przypadku braku pliku env  
 ## dodanie menu wyboru powyższych funkcji i obsługa ewentualnych wyjątków
+
+## Instalacja
+
+# za pomocą dockera: docker build -t znajdowanie_znajomych .
+
+# manualna: Aby zainstalować aplikację bez dockera należy uruchomić konsolę (w przypadku windowsa cmd, linuxa bash) i wpisać: pip install --upgrade pip pip install -r requirements.txt
+
