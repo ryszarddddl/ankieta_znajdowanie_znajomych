@@ -12,7 +12,8 @@ możliwość dodania klucza api open ai w przypadku braku pliku env
 
 ## Instalacja
 
-# za pomocą dockera: docker build -t znajdowanie_znajomych .
+za pomocą dockera: docker build -t znajdowanie_znajomych .
 
-# manualna: Aby zainstalować aplikację bez dockera należy uruchomić konsolę (w przypadku windowsa cmd, linuxa bash) i wpisać: pip install --upgrade pip pip install -r requirements.txt
+manualna: Aby zainstalować aplikację bez dockera należy uruchomić konsolę (w przypadku windowsa cmd, linuxa bash) i wpisać: pip install --upgrade pip pip install -r requirements.txt
+
 
