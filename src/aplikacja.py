@@ -1,32 +1,35 @@
 import sys
 import types
+import os
+import json
 from pathlib import Path
+from dotenv import load_dotenv, set_key
+
+import streamlit as st
+import joblib
+import pandas as pd
+import plotly.express as px
+from openai import OpenAI
+
+try:
+    from pycaret.clustering import setup, create_model, assign_model, plot_model, save_model, load_model, predict_model
+except ImportError:
+    st.error("pycaret nie zainstalowany. Zainstaluj: pip install pycaret")
+    st.stop()
 
 # 1. Definicja ścieżki (bezwzględna lokalizacja folderu zad71)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-load_dotenv() # To wczyta zmienne środowiskowe na serwerze
+
 # 2. Ścieżka do podkatalogu data
 data_dir = PROJECT_ROOT / "data"
-
-# Jeśli chcesz stworzyć ten folder, gdyby nie istniał:
 data_dir.mkdir(exist_ok=True)
 
-# 3. DOPIERO TERAZ DALSZE IMPORTY
-import streamlit as st
-import joblib
-
-import json
-import pandas as pd  # type: ignore
-import plotly.express as px  # type: ignore
-from dotenv import load_dotenv, set_key
-from openai import OpenAI
-from pycaret.clustering import setup, create_model, assign_model, plot_model, save_model, load_model, predict_model
-import os
+# 3. Załaduj zmienne środowiskowe
+load_dotenv()
 
 # To wymusza, aby os był widoczny wszędzie tam, gdzie joblib go szuka
 sys.modules['os'] = os 
   
-#@st.cache_data
 def handle_openai_key():
     env_path = Path(".env")
     
@@ -53,29 +56,18 @@ def handle_openai_key():
                 
     return api_key
 
-#@st.cache_data
 def build_model(MODEL_NAME,DATA,num_clusters=8):
-    #df.head()
-    
     s = setup(DATA, session_id=123, html=False, verbose=False)
-    #s.dataset.head()
-    #s.dataset_transformed.head()
-    
     kmeans = create_model('kmeans', num_clusters)
     df_with_clusters = assign_model(kmeans)
-    #df_with_clusters
-    #df_with_clusters["Cluster"].value_counts()
     plot_model(kmeans, plot='cluster', display_format='streamlit')
     save_model(kmeans, MODEL_NAME, verbose=False)
 
-#@st.cache_data
 def make_descriptions(_data_model,new_data,FILE_CLUSTER_NAMES_AND_DESCRIPTIONS,api_key):
-    #api_key = handle_openai_key()
     openai_client = OpenAI(api_key=api_key)
     
     kmeans_pipeline = _data_model
     df_with_clusters = predict_model(model=kmeans_pipeline, data=new_data)
-    df_with_clusters["Cluster"].value_counts()
     
     cluster_descriptions = {}
     for cluster_id in df_with_clusters['Cluster'].unique():
@@ -110,7 +102,7 @@ def make_descriptions(_data_model,new_data,FILE_CLUSTER_NAMES_AND_DESCRIPTIONS,a
         }
     }
     """
-    #print(prompt)
+    
     response = openai_client.chat.completions.create(
         model="gpt-4o",
         temperature=0,
@@ -127,7 +119,6 @@ def make_descriptions(_data_model,new_data,FILE_CLUSTER_NAMES_AND_DESCRIPTIONS,a
         f.write(json.dumps(cluster_names_and_descriptions))
     
 
-#@st.cache_data
 def get_model(MODEL_PATH):
     # Wymuś pełną ścieżkę z rozszerzeniem .pkl
     full_path = str(Path(MODEL_PATH).with_suffix('.pkl'))
@@ -148,10 +139,8 @@ if 'data_df' not in st.session_state:
 if st.session_state.data_df is None:
     lista_csv = [f.name for f in data_dir.glob("*.csv")]
     if lista_csv:
-        # 2. Wyświetlamy rozwijaną listę (selectbox)
         wybrany_plik = st.selectbox("Wybierz plik danych do analizy:", lista_csv)
     
-        # 3. Akcja po wyborze (np. wczytanie ramki danych)
         if st.button("Wczytaj dane"):
             st.session_state.data_df = pd.read_csv(data_dir / wybrany_plik, sep=';')
             st.success(f"Pomyślnie wczytano: {wybrany_plik}")
@@ -168,8 +157,6 @@ else:
         st.session_state.d_model = None
     if st.session_state.d_model is None:
         lista_pkl = [f.name for f in data_dir.glob("*.pkl")]
-        #if lista_pkl:
-        # 2. Wyświetlamy rozwijaną listę (selectbox)
         wybrany_plik = st.selectbox("Wybierz plik modelu treningowego:", lista_pkl)
             
         if st.button("Wczytaj dane"):
@@ -181,7 +168,6 @@ else:
             if st.button("OK"):
                 st.rerun()
                 
-        #else:
         with st.form("Zbuduj nowy model treningowy"):
             MODEL_NAME = st.text_input("Nazwa modelu:", value="welcome_survey_clustering_pipeline_v1")
             num_clusters_input = st.number_input(
@@ -204,9 +190,6 @@ else:
         if st.session_state.json_cluster_names_and_descriptions is None:
             api_key = handle_openai_key()
             lista_json = [f.name for f in data_dir.glob("*.json")]
-            #lista_pkl = [f.name for f in data_dir.iterdir() if f.is_file() and f.suffix == ".json"]
-            #if lista_pkl:
-            # 2. Wyświetlamy rozwijaną listę (selectbox)
             wybrany_plik = st.selectbox("Wybierz plik opisu grup modelu treningowego:", lista_json)
             
             if st.button("Wczytaj dane"):
@@ -214,7 +197,6 @@ else:
                 st.success(f"Pomyślnie wczytano: {wybrany_plik}")
                 if st.button("OK"):
                     st.rerun()
-            #else:
             
             with st.form("Wygeneruj opisy dla modelu treningowego"):
                 CLUSTER_NAMES_AND_DESCRIPTIONS = st.text_input("Nazwa modelu:", value='welcome_survey_cluster_names_and_descriptions_v1.json')
