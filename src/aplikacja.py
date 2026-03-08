@@ -28,7 +28,7 @@ sys.modules['os'] = os
   
 #@st.cache_data
 def handle_openai_key():
-    env_path = Path(".env")
+    env_path = PROJECT_ROOT / ".env" 
     
     # 1. Próbujemy załadować istniejący plik .env
     load_dotenv(env_path)
